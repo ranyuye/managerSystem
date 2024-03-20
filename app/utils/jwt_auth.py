@@ -1,3 +1,6 @@
+import hashlib
+import os
+
 import jwt
 from datetime import datetime, timedelta
 from fastapi import Depends, FastAPI, HTTPException, status, Request
@@ -86,3 +89,23 @@ async def verify_jwt_token(request: Request, token: str = Depends(oauth2_scheme)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 
+async def password_hashing(password: str) -> tuple:
+    """
+    Asynchronous function that hashes a given password with a salt for improved security.
+
+    Parameters:
+    password (str): The original password string to be hashed.
+
+    Returns:
+    tuple: A tuple containing two elements. The first element is the hexadecimal representation of a randomly generated
+    16-byte salt value using os.urandom(). The second element is the hash value computed by applying the SHA-256
+    algorithm to the concatenation of the salt and the encoded password, which helps mitigate rainbow table attacks.
+
+    Note:
+    This function utilizes a salted hashing technique to enhance password security.
+    """
+    # Generate a 16-byte random salt
+    salt = os.urandom(16)
+    # Compute the hash value of the concatenated salt and encoded password using the SHA-256 algorithm
+    hash_value = hashlib.sha256(salt + password.encode()).hexdigest()
+    return salt.hex(), hash_value

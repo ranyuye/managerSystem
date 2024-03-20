@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware import Middleware
 from app.utils.jwt_auth import JwtAuth, verify_jwt_token
-
+from app.endpoints import router
 #
 #
 # @app.post("/token")
@@ -19,6 +19,9 @@ from app.utils.jwt_auth import JwtAuth, verify_jwt_token
 #         data={"sub": user["username"]}, expires_delta=access_token_expires
 #     )
 #     return {"access_token": access_token, "token_type": "bearer"}
+
+app = FastAPI(title="Manager System", docs_url="/api_docs")
+app.include_router(router)
 
 
 async def jwt_authentication_middleware(request: Request, call_next):
@@ -33,10 +36,6 @@ async def jwt_authentication_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-
-app = FastAPI()
-
-
 # @app.middleware('http')
 # async def handle_exception(request: Request, call_next):
 #     try:
@@ -47,15 +46,16 @@ app = FastAPI()
 #     return response
 
 
-@app.middleware("http")
-async def handle_user_permission(request: Request, call_next):
-    print("request-path", request.url.path)
-    if request.url.path == "/test2":
-        return await call_next(request)
-    if not request.headers.get("accept-language1", None):
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={})
-
-    return await call_next(request)
+# @app.middleware("http")
+# async def handle_user_permission(request: Request, call_next):
+#     print("request-path", request.url.path)
+#     exclude_path = ["/test2", "/api_docs", "/", "/openapi.json"]
+#     if request.url.path in exclude_path:
+#         return await call_next(request)
+#     if not request.headers.get("accept-language1", None):
+#         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={})
+#
+#     return await call_next(request)
 
 
 @app.get("/test1")
