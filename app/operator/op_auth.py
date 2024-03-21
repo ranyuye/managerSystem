@@ -23,7 +23,7 @@ async def register_user(user_info: UserInfo, db_session: Session) -> ManagerResp
             exist_user = db_session.query(Users.id).filter(Users.email == user_info.email).first()
             if exist_user:
                 return ManagerCode.UserAlreadyExist
-            pwd_hash, pwd_salt = await password_hashing(user_info.password)
+            pwd_salt, pwd_hash = await password_hashing(user_info.password)
             user = Users(
                 name=user_info.name,
                 email=user_info.email,

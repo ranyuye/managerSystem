@@ -8,6 +8,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
 from app.config import jwt_info
+from app.db_core.db_connect import database_manager
+from app.db_core.db_model import Users
+from app.utils.permission import list_permission
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -70,20 +73,24 @@ class JwtAuth:
 #         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 
-async def verify_jwt_token(request: Request, token: str = Depends(oauth2_scheme)):
+async def verify_jwt_token(request: Request, token: str = Depends(oauth2_scheme), permission_id: int = None):
     try:
-        payload = JwtAuth(**jwt_info).parse_access_token(token=token)
-        username: str = payload.get("sub")
-        if username is None:
+        if not token.startswith("Bearer "):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
-
-        # 这里可以进一步验证用户是否有效，例如从数据库获取用户信息
-        # user = await authenticate_user(username=username)
-        # if not user:
-        #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-        # 将用户名或其他需要的信息放入请求上下文中供后续使用
-        request.state.user = {"username": username}
+        token: str = token[7:]
+        payload = JwtAuth(**jwt_info).parse_access_token(token=token)
+        user_id: str = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+        db_session = database_manager.get_session()
+        user = db_session.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+        if permission_id:
+            permission_ids = await list_permission(permission_id)
+            if not all([i in user.permission.split(',') for i in permission_ids]):
+                raise HTTPException(status_code=status.HTTP_403, detail="Permission Not Allowed")
+        request.state.user = {"user_id": user_id}
         return request
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
@@ -109,7 +116,7 @@ async def password_hashing(password: str, salt: str = None) -> tuple:
 
     # Generate a random salt if none is provided
 
-    salt_bytes = os.urandom(16) if not salt else salt_bytes = bytes.fromhex(salt)
+    salt_bytes = os.urandom(16) if not salt else bytes.fromhex(salt)
     assert len(salt_bytes) == 16, "Salt must represent a 16-byte value when encoded in hexadecimal"
 
     # Compute the hash value of the concatenated salt (as bytes) and encoded password using the SHA-256 algorithm

@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, SmallInteger, DATETIME
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, Integer, String, Text, SmallInteger, DATETIME, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
 from app.utils.format_time import now
 
 

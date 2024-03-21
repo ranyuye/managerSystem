@@ -45,3 +45,6 @@ def get_db_session():
             raise e
     finally:
         db_session.close()  # 在finally块中确保会话关闭以释放资源
+
+
+SessionLocal = get_db_session()
