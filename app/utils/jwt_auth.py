@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 
-jwt_info = {"secret_key": "your-secret-key", "algorithm": "HS256"}
+from app.config import jwt_info
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -89,23 +89,29 @@ async def verify_jwt_token(request: Request, token: str = Depends(oauth2_scheme)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 
-async def password_hashing(password: str) -> tuple:
+async def password_hashing(password: str, salt: str = None) -> tuple:
     """
     Asynchronous function that hashes a given password with a salt for improved security.
 
     Parameters:
     password (str): The original password string to be hashed.
+    salt (str, optional): A hexadecimal representation of a 16-byte salt value. If not provided,
+    a random salt will be generated using os.urandom() and converted to its hexadecimal form.
 
     Returns:
-    tuple: A tuple containing two elements. The first element is the hexadecimal representation of a randomly generated
-    16-byte salt value using os.urandom(). The second element is the hash value computed by applying the SHA-256
-    algorithm to the concatenation of the salt and the encoded password, which helps mitigate rainbow table attacks.
+    tuple: A tuple containing two elements. The first element is the hexadecimal representation of the salt value.
+    The second element is the hash value computed by applying the SHA-256 algorithm to the concatenation of
+    the salt (as bytes) and the encoded password, which helps mitigate rainbow table attacks.
 
     Note:
     This function utilizes a salted hashing technique to enhance password security.
     """
-    # Generate a 16-byte random salt
-    salt = os.urandom(16)
-    # Compute the hash value of the concatenated salt and encoded password using the SHA-256 algorithm
-    hash_value = hashlib.sha256(salt + password.encode()).hexdigest()
-    return salt.hex(), hash_value
+
+    # Generate a random salt if none is provided
+
+    salt_bytes = os.urandom(16) if not salt else salt_bytes = bytes.fromhex(salt)
+    assert len(salt_bytes) == 16, "Salt must represent a 16-byte value when encoded in hexadecimal"
+
+    # Compute the hash value of the concatenated salt (as bytes) and encoded password using the SHA-256 algorithm
+    hash_value = hashlib.sha256(salt_bytes + password.encode()).hexdigest()
+    return salt_bytes.hex(), hash_value

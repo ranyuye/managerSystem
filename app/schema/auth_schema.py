@@ -7,3 +7,8 @@ class UserInfo(BaseModel):
     password: str = Field(..., description="user password")
     role: int = Field(..., description="user role")
     team: int = Field(..., description="user team")
+
+
+class LoginInfo(BaseModel):
+    email: str = Field(..., description="user email")
+    password: str = Field(..., description="user password")
