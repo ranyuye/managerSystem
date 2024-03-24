@@ -23,6 +23,7 @@ class Users(DatabaseBaseModel, Base):
     pw_hash = Column(Text, nullable=False, comment="password hash")
     pw_salt = Column(Text, nullable=False, comment="password salt")
     permission = Column(String, nullable=True, default="1", comment="user permission")
+    dept_id = Column(Integer, nullable=True, comment="user dept id")
 
 
 class Permissions(DatabaseBaseModel, Base):
@@ -31,3 +32,17 @@ class Permissions(DatabaseBaseModel, Base):
     pm_name = Column(String, nullable=False, comment="permission name")
     pm_group = Column(Integer, nullable=False, comment="permission group")
     pm_desc = Column(String, nullable=True, comment="permission description")
+
+
+class Dept(DatabaseBaseModel, Base):
+    __tablename__ = 'dept'
+    name = Column(String, nullable=False, comment="dept name")
+    leader = Column(Integer, nullable=True, comment="dept leader id")
+
+
+class DeptRelation(DatabaseBaseModel, Base):
+    __tablename__ = 'dept_relation'
+    child_dept_id = Column(Integer, ForeignKey("dept.id"), nullable=False, comment="dept id")
+    parent_dept_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="user id")
+
+

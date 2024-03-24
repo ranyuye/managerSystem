@@ -1,6 +1,4 @@
-import traceback
-
-from fastapi import FastAPI, APIRouter, Body, Request, Depends
+from fastapi import APIRouter, Body, Request, Depends
 from sqlalchemy.orm import Session
 
 from app.db_core.db_connect import get_db_session
