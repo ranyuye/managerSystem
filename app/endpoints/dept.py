@@ -29,3 +29,13 @@ async def pub_update_dept(
 ):
     response_status = await op_dept.update_dept(dept_info=dept_info, db_session=db_session)
     return ManagerResponse(**response_status.__dict__)
+
+
+@router.get("/list", name="get department list")
+# todo 权限-查看部门列表
+async def get_dept_list(
+        request: Request,
+        db_session: Session = Depends(get_db_session)
+):
+    response_status, dept_list = await op_dept.dept_list(db_session=db_session)
+    return ManagerResponse(**{**response_status.__dict__, "data": dept_list})

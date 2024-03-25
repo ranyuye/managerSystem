@@ -103,6 +103,14 @@ async def update_dept(dept_info: DeptUpdateInfo, db_session: Session) -> Manager
         return response_status
 
 
+async def dept_list(db_session: Session) -> (ManagerCode, dict):
+    """
+    :param db_session:
+    :return:  (ManagerCode, dict)
+    """
+    response_status, data = ManagerCode.Success, {}
+    try:
+
 
 
 
