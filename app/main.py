@@ -1,28 +1,9 @@
-from typing import Any
-
 import uvicorn
-from datetime import timedelta
-from fastapi import Depends, FastAPI, HTTPException, status, Request
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.responses import JSONResponse
-from fastapi.middleware import Middleware
-
-from app.db_core.db_connect import get_db_session
-from app.db_core.db_model import Permissions
-from app.utils.jwt_auth import JwtAuth, verify_jwt_token
+from app.utils.jwt_auth import verify_jwt_token
 from app.endpoints import router
-#
-#
-# @app.post("/token")
-# async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-#     user = await authenticate_user(form_data.username, form_data.password)
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
-#     access_token_expires = timedelta(seconds=5)
-#     access_token = create_access_token(
-#         data={"sub": user["username"]}, expires_delta=access_token_expires
-#     )
-#     return {"access_token": access_token, "token_type": "bearer"}
-from app.utils.permission import list_permission
+
 
 app = FastAPI(title="Manager System", docs_url="/api_docs")
 app.include_router(router)

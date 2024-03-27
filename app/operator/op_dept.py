@@ -1,10 +1,11 @@
 import logging
+import traceback
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from typing import Optional
 
-from app.db_core.db_model import Dept, DeptRelation
+from app.db_core.db_model import Dept, DeptRelation, Users
 from app.schema.const_schema import ManagerCode
 from app.schema.dept_schema import DeptInfo, DeptUpdateInfo
 from app.schema.error_schema import DataNotExist
@@ -103,14 +104,66 @@ async def update_dept(dept_info: DeptUpdateInfo, db_session: Session) -> Manager
         return response_status
 
 
-async def dept_list(db_session: Session) -> (ManagerCode, dict):
+async def dept_list(db_session: Session, dept_id: int, dept_name: str, dept_parent: int, page: int, size: int,
+                    export: bool = False) -> (ManagerCode, dict):
     """
+    :param export:
+    :param size:
+    :param dept_parent:
+    :param dept_name:
+    :param dept_id:
+    :param page:
     :param db_session:
     :return:  (ManagerCode, dict)
     """
     response_status, data = ManagerCode.Success, {}
     try:
-
+        with db_session as db_session:
+            Parent = aliased(Dept)
+            query = db_session.query(
+                Dept.id, Dept.name, Dept.create_time, Dept.update_time, Users.name.label("leader_name"),
+                Parent.name.label("parent_name")
+            ).join(
+                Users, Users.id == Dept.leader, isouter=True
+            ).join(
+                DeptRelation, DeptRelation.child_dept_id == Dept.id, isouter=True
+            ).join(
+                Parent, Parent.id == DeptRelation.parent_dept_id, isouter=True
+            ).filter(
+                Dept.status == 1, DeptRelation.status == 1
+            ).order_by(Dept.create_time.desc())
+            if dept_id:
+                query = query.filter(Dept.id == dept_id)
+            if dept_name:
+                query = query.filter(Dept.name.like(f"%{dept_name}%"))
+            if dept_parent:
+                query = query.filter(DeptRelation.parent_dept_id == dept_parent)
+            count: int = query.count()
+            if page and size and not export:
+                query = query.offset(page * size).limit(size)
+            items: list = []
+            for item in query.all():
+                items.append(
+                    {
+                        "id": item.id,
+                        "name": item.name,
+                        "create_time": item.create_time,
+                        "update_time": item.update_time,
+                        "leader_name": item.leader_name,
+                        "parent_name": item.parent_name
+                    }
+                )
+            col: dict = {"id": "ID", "name": "部门名称", "leader_name": "领导", "parent_name": "上属部门",
+                         "create_time": "创建时间", "update_time": "更新时间"}
+            data: dict = {"items": items, "total": count, "col": col}
+    except SQLAlchemyError as e:
+        logging.error(f"Error while dept_list dept: {traceback.format_exc()}")
+        response_status, data = ManagerCode.DataBaseError, {}
+    except Exception as e:
+        logging.error(f"Unexpected error: {traceback.format_exc()}")
+        response_status, data = ManagerCode.UnknownError, {}
+    finally:
+        return response_status, data
 
 
 
